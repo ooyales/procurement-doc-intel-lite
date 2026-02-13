@@ -1,0 +1,30 @@
+services:
+  backend:
+    build: ./backend
+    container_name: procdoc-backend
+    ports:
+      - "5008:5000"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=sqlite:////app/data/procdoc.db
+      - SECRET_KEY=dev-secret
+      - JWT_SECRET_KEY=jwt-dev-secret
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - UPLOAD_FOLDER=/app/uploads
+    volumes:
+      - procdoc-data:/app/data
+      - procdoc-uploads:/app/uploads
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: procdoc-frontend
+    ports:
+      - "6006:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  procdoc-data:
+  procdoc-uploads:
