@@ -208,7 +208,7 @@ export default function ProductCatalogPage() {
   return (
     <div>
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Package size={18} className="text-eaw-primary" />
@@ -219,7 +219,7 @@ export default function ProductCatalogPage() {
           </p>
         </div>
         <button
-          className="btn-secondary"
+          className="btn-secondary self-start sm:self-auto"
           onClick={handleRebuild}
           disabled={rebuilding}
         >
@@ -242,7 +242,7 @@ export default function ProductCatalogPage() {
       {/* Search / Filter Bar */}
       <div className="eaw-card mb-4">
         <div className="flex flex-wrap gap-3 items-end">
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-[200px] w-full sm:w-auto">
             <label className="block text-xs font-medium text-eaw-muted mb-1">Search</label>
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -250,17 +250,17 @@ export default function ProductCatalogPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="input-field pl-8"
+                className="w-full py-2 pr-3 pl-9 text-sm border border-eaw-border rounded outline-none transition-colors focus:border-eaw-primary focus:ring-1 focus:ring-eaw-primary"
                 placeholder="Search products, manufacturers..."
               />
             </div>
           </div>
-          <div className="min-w-[150px]">
+          <div className="min-w-[150px] w-full sm:w-auto">
             <label className="block text-xs font-medium text-eaw-muted mb-1">Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="select-field"
+              className="select-field w-full sm:w-auto"
             >
               {CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -509,7 +509,7 @@ export default function ProductCatalogPage() {
                 <Calculator size={16} className="text-eaw-primary" />
                 IGCE Estimate
               </h3>
-              <button className="text-gray-400 hover:text-gray-600" onClick={closeIGCE}>
+              <button className="text-gray-400 hover:text-gray-600 p-1" onClick={closeIGCE}>
                 <X size={18} />
               </button>
             </div>
@@ -558,7 +558,7 @@ export default function ProductCatalogPage() {
                     <p className="text-xs text-eaw-muted">{igceResult.manufacturer}</p>
                   )}
 
-                  <div className="bg-blue-50 rounded-lg p-4 space-y-2">
+                  <div className="bg-blue-50 rounded-lg p-3 md:p-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-eaw-muted">Estimated Unit Price</span>
                       <span className="font-bold text-eaw-font">{formatCurrency(igceResult.estimated_unit_price)}</span>

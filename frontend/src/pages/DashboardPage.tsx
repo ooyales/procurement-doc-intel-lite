@@ -22,6 +22,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import client from '@/api/client';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface DashboardData {
   total_documents: number;
@@ -78,6 +79,7 @@ function statusBadge(status: string): string {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -177,7 +179,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
         {kpis.map((kpi) => (
           <div key={kpi.label} className="kpi-card">
             <div className={`kpi-icon ${kpi.bg} ${kpi.color}`}>{kpi.icon}</div>
@@ -195,14 +197,14 @@ export default function DashboardPage() {
         <div className="eaw-card">
           <h3 className="text-sm font-semibold text-eaw-font mb-3">Documents by Type</h3>
           {docTypeData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={isMobile ? 220 : 250}>
               <PieChart>
                 <Pie
                   data={docTypeData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={55}
-                  outerRadius={85}
+                  innerRadius={isMobile ? 40 : 55}
+                  outerRadius={isMobile ? 65 : 85}
                   dataKey="value"
                   nameKey="name"
                   paddingAngle={2}
@@ -230,7 +232,7 @@ export default function DashboardPage() {
         <div className="eaw-card">
           <h3 className="text-sm font-semibold text-eaw-font mb-3">Spend by Category</h3>
           {spendByCat.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={isMobile ? 220 : 250}>
               <BarChart data={spendByCat} layout="vertical" barSize={20}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
                 <XAxis
@@ -242,7 +244,7 @@ export default function DashboardPage() {
                   type="category"
                   dataKey="category"
                   tick={{ fontSize: 11, fill: '#777' }}
-                  width={100}
+                  width={isMobile ? 70 : 100}
                 />
                 <Tooltip formatter={(val: number) => formatCurrency(val)} />
                 <Bar dataKey="total" fill="#337ab7" radius={[0, 4, 4, 0]} />
@@ -259,7 +261,9 @@ export default function DashboardPage() {
       {/* Recent Documents */}
       <div className="eaw-card mb-6">
         <h3 className="text-sm font-semibold text-eaw-font mb-3">Recent Documents</h3>
-        <div className="overflow-x-auto">
+
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="eaw-table">
             <thead>
               <tr>
@@ -302,13 +306,45 @@ export default function DashboardPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden mobile-card-table">
+          {data.recent_documents.map((doc: any) => (
+            <div
+              key={doc.id}
+              className="mobile-card-row clickable"
+              onClick={() => navigate(`/documents/${doc.id}`)}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-medium text-sm text-eaw-link truncate max-w-[200px]">
+                  {doc.original_filename}
+                </span>
+                <span className={statusBadge(doc.processing_status)}>
+                  {doc.processing_status}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-eaw-muted">
+                <span>{formatDocType(doc.document_type)}</span>
+                <span>{doc.vendor_name || '--'}</span>
+                <span className="ml-auto">{formatDate(doc.created_at)}</span>
+              </div>
+            </div>
+          ))}
+          {data.recent_documents.length === 0 && (
+            <p className="text-center text-eaw-muted py-8 text-sm">
+              No documents uploaded yet. Go to the Document Library to get started.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Processing Queue */}
       {data.processing_queue.length > 0 && (
         <div className="eaw-card">
           <h3 className="text-sm font-semibold text-eaw-font mb-3">Processing Queue</h3>
-          <div className="overflow-x-auto">
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="eaw-table">
               <thead>
                 <tr>
@@ -339,6 +375,27 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card List */}
+          <div className="md:hidden mobile-card-table">
+            {data.processing_queue.map((doc: any) => (
+              <div
+                key={doc.id}
+                className="mobile-card-row clickable"
+                onClick={() => navigate(`/documents/${doc.id}`)}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-sm text-eaw-link truncate max-w-[200px]">
+                    {doc.original_filename}
+                  </span>
+                  <span className={statusBadge(doc.processing_status)}>
+                    {doc.processing_status}
+                  </span>
+                </div>
+                <div className="text-xs text-eaw-muted">{formatDate(doc.created_at)}</div>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -52,7 +52,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* API Status */}
         <div className="eaw-card">
           <div className="flex items-center gap-2 mb-4">
@@ -153,7 +153,7 @@ export default function SettingsPage() {
             <h3 className="text-sm font-semibold text-eaw-font">Field Mappings</h3>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-4">
+          <div className="bg-blue-50 border border-blue-200 rounded p-3 md:p-4 mb-4">
             <div className="flex items-start gap-2">
               <Info size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
@@ -172,7 +172,7 @@ export default function SettingsPage() {
             <h4 className="text-xs font-semibold text-eaw-muted uppercase tracking-wide">
               How Field Mapping Works
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
               <div className="p-3 bg-gray-50 rounded">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-eaw-primary text-white rounded-full flex items-center justify-center text-xs font-bold">

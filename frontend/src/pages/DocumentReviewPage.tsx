@@ -271,11 +271,11 @@ export default function DocumentReviewPage() {
       </button>
 
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <FileText size={18} className="text-eaw-primary" />
-          <div>
-            <h1 className="text-lg font-bold text-eaw-font">{doc.original_filename}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <FileText size={18} className="text-eaw-primary flex-shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-eaw-font truncate">{doc.original_filename}</h1>
             <span className={`${statusBadge(doc.processing_status)} mt-1`}>
               {doc.processing_status}
             </span>
@@ -298,7 +298,7 @@ export default function DocumentReviewPage() {
       )}
 
       {/* Two-Column Layout */}
-      <div className="flex gap-6 flex-col lg:flex-row">
+      <div className="flex gap-4 md:gap-6 flex-col lg:flex-row">
         {/* Left Panel: Metadata */}
         <div className="w-full lg:w-2/5 space-y-4">
           <div className="eaw-card">
@@ -335,7 +335,7 @@ export default function DocumentReviewPage() {
               <div>
                 <label className="block text-xs font-medium text-eaw-muted mb-1">Document Type</label>
                 <select
-                  className="select-field"
+                  className="select-field w-full"
                   value={metaForm.document_type}
                   onChange={(e) => setMetaForm((f) => ({ ...f, document_type: e.target.value }))}
                 >
@@ -401,7 +401,7 @@ export default function DocumentReviewPage() {
                     style={{ width: `${doc.extraction_confidence * 100}%` }}
                   />
                 </div>
-                <div className="flex justify-between mt-2 text-xs text-eaw-muted">
+                <div className="flex flex-col sm:flex-row justify-between mt-2 text-xs text-eaw-muted gap-1">
                   <span>Method: {doc.extraction_method || 'Unknown'}</span>
                   <span>AI: {doc.ai_model_used || 'N/A'}</span>
                 </div>
@@ -438,172 +438,213 @@ export default function DocumentReviewPage() {
             </div>
 
             {doc.line_items && doc.line_items.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="eaw-table text-xs">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Product Name</th>
-                      <th>Part #</th>
-                      <th>Category</th>
-                      <th>Qty</th>
-                      <th>Unit Price</th>
-                      <th>Ext Price</th>
-                      <th>Confidence</th>
-                      <th>Verified</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {doc.line_items.map((item, idx) => (
-                      <tr key={item.id}>
-                        <td className="text-eaw-muted">{item.line_number || idx + 1}</td>
+              <>
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="eaw-table text-xs">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Product Name</th>
+                        <th>Part #</th>
+                        <th>Category</th>
+                        <th>Qty</th>
+                        <th>Unit Price</th>
+                        <th>Ext Price</th>
+                        <th>Confidence</th>
+                        <th>Verified</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {doc.line_items.map((item, idx) => (
+                        <tr key={item.id}>
+                          <td className="text-eaw-muted">{item.line_number || idx + 1}</td>
 
-                        {/* Product Name - editable */}
-                        <td
-                          className="cursor-pointer hover:bg-blue-50 max-w-[180px] truncate"
-                          onClick={() => startCellEdit(item.id, 'product_name', item.product_name)}
-                          title={item.product_name || ''}
-                        >
-                          {editingCell?.itemId === item.id && editingCell?.field === 'product_name' ? (
+                          {/* Product Name - editable */}
+                          <td
+                            className="cursor-pointer hover:bg-blue-50 max-w-[180px] truncate"
+                            onClick={() => startCellEdit(item.id, 'product_name', item.product_name)}
+                            title={item.product_name || ''}
+                          >
+                            {editingCell?.itemId === item.id && editingCell?.field === 'product_name' ? (
+                              <input
+                                type="text"
+                                className="input-field !py-0.5 !text-xs"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onBlur={saveCellEdit}
+                                onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
+                                autoFocus
+                              />
+                            ) : (
+                              item.product_name || '--'
+                            )}
+                          </td>
+
+                          {/* Part # - editable */}
+                          <td
+                            className="cursor-pointer hover:bg-blue-50"
+                            onClick={() => startCellEdit(item.id, 'part_number', item.part_number)}
+                          >
+                            {editingCell?.itemId === item.id && editingCell?.field === 'part_number' ? (
+                              <input
+                                type="text"
+                                className="input-field !py-0.5 !text-xs"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onBlur={saveCellEdit}
+                                onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
+                                autoFocus
+                              />
+                            ) : (
+                              item.part_number || '--'
+                            )}
+                          </td>
+
+                          {/* Category - editable */}
+                          <td
+                            className="cursor-pointer hover:bg-blue-50"
+                            onClick={() => startCellEdit(item.id, 'category', item.category)}
+                          >
+                            {editingCell?.itemId === item.id && editingCell?.field === 'category' ? (
+                              <input
+                                type="text"
+                                className="input-field !py-0.5 !text-xs"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onBlur={saveCellEdit}
+                                onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
+                                autoFocus
+                              />
+                            ) : (
+                              item.category || '--'
+                            )}
+                          </td>
+
+                          {/* Qty - editable */}
+                          <td
+                            className="cursor-pointer hover:bg-blue-50 text-right"
+                            onClick={() => startCellEdit(item.id, 'quantity', item.quantity)}
+                          >
+                            {editingCell?.itemId === item.id && editingCell?.field === 'quantity' ? (
+                              <input
+                                type="number"
+                                className="input-field !py-0.5 !text-xs w-16"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onBlur={saveCellEdit}
+                                onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
+                                autoFocus
+                              />
+                            ) : (
+                              item.quantity ?? '--'
+                            )}
+                          </td>
+
+                          {/* Unit Price - editable */}
+                          <td
+                            className="cursor-pointer hover:bg-blue-50 text-right whitespace-nowrap"
+                            onClick={() => startCellEdit(item.id, 'unit_price', item.unit_price)}
+                          >
+                            {editingCell?.itemId === item.id && editingCell?.field === 'unit_price' ? (
+                              <input
+                                type="number"
+                                step="0.01"
+                                className="input-field !py-0.5 !text-xs w-20"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onBlur={saveCellEdit}
+                                onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
+                                autoFocus
+                              />
+                            ) : (
+                              formatCurrency(item.unit_price)
+                            )}
+                          </td>
+
+                          {/* Ext Price - editable */}
+                          <td
+                            className="cursor-pointer hover:bg-blue-50 text-right whitespace-nowrap"
+                            onClick={() => startCellEdit(item.id, 'extended_price', item.extended_price)}
+                          >
+                            {editingCell?.itemId === item.id && editingCell?.field === 'extended_price' ? (
+                              <input
+                                type="number"
+                                step="0.01"
+                                className="input-field !py-0.5 !text-xs w-20"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onBlur={saveCellEdit}
+                                onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
+                                autoFocus
+                              />
+                            ) : (
+                              formatCurrency(item.extended_price)
+                            )}
+                          </td>
+
+                          {/* Confidence */}
+                          <td className="text-center">
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${confidenceColor(item.mapping_confidence)}`}>
+                              {item.mapping_confidence != null
+                                ? `${(item.mapping_confidence * 100).toFixed(0)}%`
+                                : '--'}
+                            </span>
+                          </td>
+
+                          {/* Human Verified */}
+                          <td className="text-center">
                             <input
-                              type="text"
-                              className="input-field !py-0.5 !text-xs"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onBlur={saveCellEdit}
-                              onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
-                              autoFocus
+                              type="checkbox"
+                              checked={!!item.human_verified}
+                              onChange={() => handleVerifyToggle(item)}
+                              className="h-4 w-4 rounded border-gray-300 text-eaw-primary focus:ring-eaw-primary cursor-pointer"
                             />
-                          ) : (
-                            item.product_name || '--'
-                          )}
-                        </td>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-                        {/* Part # - editable */}
-                        <td
-                          className="cursor-pointer hover:bg-blue-50"
-                          onClick={() => startCellEdit(item.id, 'part_number', item.part_number)}
-                        >
-                          {editingCell?.itemId === item.id && editingCell?.field === 'part_number' ? (
-                            <input
-                              type="text"
-                              className="input-field !py-0.5 !text-xs"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onBlur={saveCellEdit}
-                              onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
-                              autoFocus
-                            />
-                          ) : (
-                            item.part_number || '--'
-                          )}
-                        </td>
-
-                        {/* Category - editable */}
-                        <td
-                          className="cursor-pointer hover:bg-blue-50"
-                          onClick={() => startCellEdit(item.id, 'category', item.category)}
-                        >
-                          {editingCell?.itemId === item.id && editingCell?.field === 'category' ? (
-                            <input
-                              type="text"
-                              className="input-field !py-0.5 !text-xs"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onBlur={saveCellEdit}
-                              onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
-                              autoFocus
-                            />
-                          ) : (
-                            item.category || '--'
-                          )}
-                        </td>
-
-                        {/* Qty - editable */}
-                        <td
-                          className="cursor-pointer hover:bg-blue-50 text-right"
-                          onClick={() => startCellEdit(item.id, 'quantity', item.quantity)}
-                        >
-                          {editingCell?.itemId === item.id && editingCell?.field === 'quantity' ? (
-                            <input
-                              type="number"
-                              className="input-field !py-0.5 !text-xs w-16"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onBlur={saveCellEdit}
-                              onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
-                              autoFocus
-                            />
-                          ) : (
-                            item.quantity ?? '--'
-                          )}
-                        </td>
-
-                        {/* Unit Price - editable */}
-                        <td
-                          className="cursor-pointer hover:bg-blue-50 text-right whitespace-nowrap"
-                          onClick={() => startCellEdit(item.id, 'unit_price', item.unit_price)}
-                        >
-                          {editingCell?.itemId === item.id && editingCell?.field === 'unit_price' ? (
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="input-field !py-0.5 !text-xs w-20"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onBlur={saveCellEdit}
-                              onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
-                              autoFocus
-                            />
-                          ) : (
-                            formatCurrency(item.unit_price)
-                          )}
-                        </td>
-
-                        {/* Ext Price - editable */}
-                        <td
-                          className="cursor-pointer hover:bg-blue-50 text-right whitespace-nowrap"
-                          onClick={() => startCellEdit(item.id, 'extended_price', item.extended_price)}
-                        >
-                          {editingCell?.itemId === item.id && editingCell?.field === 'extended_price' ? (
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="input-field !py-0.5 !text-xs w-20"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onBlur={saveCellEdit}
-                              onKeyDown={(e) => e.key === 'Enter' && saveCellEdit()}
-                              autoFocus
-                            />
-                          ) : (
-                            formatCurrency(item.extended_price)
-                          )}
-                        </td>
-
-                        {/* Confidence */}
-                        <td className="text-center">
-                          <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${confidenceColor(item.mapping_confidence)}`}>
-                            {item.mapping_confidence != null
-                              ? `${(item.mapping_confidence * 100).toFixed(0)}%`
-                              : '--'}
-                          </span>
-                        </td>
-
-                        {/* Human Verified */}
-                        <td className="text-center">
+                {/* Mobile Card List */}
+                <div className="md:hidden mobile-card-table">
+                  {doc.line_items.map((item, idx) => (
+                    <div key={item.id} className="mobile-card-row">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-medium text-sm text-eaw-font truncate max-w-[200px]">
+                          {item.product_name || `Line ${item.line_number || idx + 1}`}
+                        </span>
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${confidenceColor(item.mapping_confidence)}`}>
+                          {item.mapping_confidence != null
+                            ? `${(item.mapping_confidence * 100).toFixed(0)}%`
+                            : '--'}
+                        </span>
+                      </div>
+                      {item.part_number && (
+                        <p className="text-xs text-eaw-muted mb-1">Part #: {item.part_number}</p>
+                      )}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-eaw-muted mb-2">
+                        {item.category && <span>Cat: {item.category}</span>}
+                        <span>Qty: {item.quantity ?? '--'}</span>
+                        <span>Unit: {formatCurrency(item.unit_price)}</span>
+                        <span className="font-medium text-eaw-font">Total: {formatCurrency(item.extended_price)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1.5 text-xs text-eaw-muted">
                           <input
                             type="checkbox"
                             checked={!!item.human_verified}
                             onChange={() => handleVerifyToggle(item)}
                             className="h-4 w-4 rounded border-gray-300 text-eaw-primary focus:ring-eaw-primary cursor-pointer"
                           />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          Verified
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <p className="text-center text-eaw-muted py-8">
                 No line items extracted yet. Process the document to extract data.
@@ -614,9 +655,9 @@ export default function DocumentReviewPage() {
       </div>
 
       {/* Action Bar */}
-      <div className="mt-6 flex items-center gap-3 justify-end border-t border-gray-100 pt-4">
+      <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:justify-end border-t border-gray-100 pt-4">
         <button
-          className="btn-secondary"
+          className="btn-secondary justify-center"
           onClick={handleReprocess}
           disabled={reprocessing}
         >
@@ -624,7 +665,7 @@ export default function DocumentReviewPage() {
           {reprocessing ? 'Resetting...' : 'Re-process'}
         </button>
         <button
-          className="btn-success"
+          className="btn-success justify-center"
           onClick={handleApprove}
           disabled={approving || doc.processing_status === 'complete'}
         >

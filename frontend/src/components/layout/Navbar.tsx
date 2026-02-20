@@ -1,9 +1,14 @@
-import { Search, User, LogOut } from 'lucide-react';
+import { Search, User, LogOut, Menu } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
-export default function Navbar() {
+interface NavbarProps {
+  isMobile?: boolean;
+  onMenuToggle?: () => void;
+}
+
+export default function Navbar({ isMobile, onMenuToggle }: NavbarProps) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -25,21 +30,32 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-gray-800 text-white flex items-center justify-between px-4 z-50 shadow-md">
-      {/* Left: Logo */}
-      <div
-        className="flex items-center gap-3 cursor-pointer"
-        onClick={() => navigate('/')}
-      >
-        <div className="w-8 h-8 bg-eaw-primary rounded flex items-center justify-center text-sm font-bold">
-          PD
+      {/* Left: Hamburger + Logo */}
+      <div className="flex items-center gap-2">
+        {isMobile && (
+          <button
+            onClick={onMenuToggle}
+            className="p-2 rounded hover:bg-gray-700 transition-colors"
+            title="Toggle menu"
+          >
+            <Menu size={20} />
+          </button>
+        )}
+        <div
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => navigate('/')}
+        >
+          <div className="w-8 h-8 bg-eaw-primary rounded flex items-center justify-center text-sm font-bold">
+            PD
+          </div>
+          <span className="hidden sm:inline text-base font-semibold tracking-wide">
+            Procurement Doc Intel Lite
+          </span>
         </div>
-        <span className="text-base font-semibold tracking-wide">
-          Procurement Doc Intel Lite
-        </span>
       </div>
 
       {/* Right: Search + User */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {/* Search */}
         {searchOpen ? (
           <form onSubmit={handleSearch} className="flex items-center">
@@ -48,7 +64,7 @@ export default function Navbar() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search documents..."
-              className="px-3 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 outline-none focus:border-eaw-primary w-56"
+              className="px-3 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 outline-none focus:border-eaw-primary w-40 sm:w-56"
               autoFocus
               onBlur={() => {
                 if (!searchQuery) setSearchOpen(false);
@@ -58,7 +74,7 @@ export default function Navbar() {
         ) : (
           <button
             onClick={() => setSearchOpen(true)}
-            className="p-1.5 rounded hover:bg-gray-700 transition-colors"
+            className="p-2 rounded hover:bg-gray-700 transition-colors"
             title="Search"
           >
             <Search size={18} />
@@ -66,7 +82,7 @@ export default function Navbar() {
         )}
 
         {/* User */}
-        <div className="flex items-center gap-2 text-sm text-gray-300">
+        <div className="hidden md:flex items-center gap-2 text-sm text-gray-300">
           <User size={16} />
           <span>{user?.username ?? 'User'}</span>
         </div>
@@ -74,7 +90,7 @@ export default function Navbar() {
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="p-1.5 rounded hover:bg-gray-700 transition-colors"
+          className="p-2 rounded hover:bg-gray-700 transition-colors"
           title="Logout"
         >
           <LogOut size={18} />

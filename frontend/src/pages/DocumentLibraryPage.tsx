@@ -262,7 +262,7 @@ export default function DocumentLibraryPage() {
       {/* Upload Zone */}
       <div className="eaw-card mb-6">
         <div
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+          className={`border-2 border-dashed rounded-lg p-6 md:p-8 text-center transition-colors ${
             dragOver ? 'border-eaw-primary bg-blue-50' : 'border-gray-300 hover:border-gray-400'
           }`}
           onDrop={handleDrop}
@@ -336,7 +336,7 @@ export default function DocumentLibraryPage() {
       {/* Filter Bar */}
       <div className="eaw-card mb-4">
         <div className="flex flex-wrap gap-3 items-end">
-          <div className="flex-1 min-w-[180px]">
+          <div className="flex-1 min-w-[180px] w-full sm:w-auto">
             <label className="block text-xs font-medium text-eaw-muted mb-1">Search</label>
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -344,36 +344,36 @@ export default function DocumentLibraryPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="input-field pl-8"
+                className="w-full py-2 pr-3 pl-9 text-sm border border-eaw-border rounded outline-none transition-colors focus:border-eaw-primary focus:ring-1 focus:ring-eaw-primary"
                 placeholder="Search filename, vendor, doc #..."
               />
             </div>
           </div>
-          <div className="min-w-[150px]">
+          <div className="min-w-[150px] w-full sm:w-auto">
             <label className="block text-xs font-medium text-eaw-muted mb-1">Document Type</label>
             <select
               value={docType}
               onChange={(e) => setDocType(e.target.value)}
-              className="select-field"
+              className="select-field w-full sm:w-auto"
             >
               {DOC_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
           </div>
-          <div className="min-w-[140px]">
+          <div className="min-w-[140px] w-full sm:w-auto">
             <label className="block text-xs font-medium text-eaw-muted mb-1">Status</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="select-field"
+              className="select-field w-full sm:w-auto"
             >
               {STATUSES.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
           </div>
-          <div className="min-w-[150px]">
+          <div className="min-w-[150px] w-full sm:w-auto">
             <label className="block text-xs font-medium text-eaw-muted mb-1">Vendor</label>
             <input
               type="text"
@@ -394,7 +394,8 @@ export default function DocumentLibraryPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="eaw-table">
                 <thead>
                   <tr>
@@ -472,6 +473,65 @@ export default function DocumentLibraryPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card List */}
+            <div className="md:hidden mobile-card-table">
+              {data?.items.map((doc) => (
+                <div key={doc.id} className="mobile-card-row">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <FileFormatIcon format={doc.file_format} />
+                      <span className="truncate font-medium text-sm text-eaw-font" title={doc.original_filename}>
+                        {doc.original_filename}
+                      </span>
+                    </div>
+                    <span className={`ml-2 flex-shrink-0 ${statusBadge(doc.processing_status)}`}>
+                      {doc.processing_status}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-eaw-muted mb-2">
+                    <span>{formatDocType(doc.document_type)}</span>
+                    {doc.vendor_name && <span>{doc.vendor_name}</span>}
+                    <span>{formatCurrency(doc.total_amount)}</span>
+                    <span>{formatDate(doc.created_at)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="btn-secondary !py-1.5 !px-3 !text-xs"
+                      onClick={() => navigate(`/documents/${doc.id}`)}
+                    >
+                      <Eye size={14} />
+                      View
+                    </button>
+                    {doc.processing_status === 'uploaded' && (
+                      <button
+                        className="btn-primary !py-1.5 !px-3 !text-xs"
+                        onClick={() => handleProcess(doc.id)}
+                        disabled={processingIds.has(doc.id)}
+                      >
+                        {processingIds.has(doc.id) ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Play size={14} />
+                        )}
+                        Process
+                      </button>
+                    )}
+                    <button
+                      className="btn-secondary !py-1.5 !px-3 !text-xs text-red-500 hover:text-red-700 ml-auto"
+                      onClick={() => handleDelete(doc.id, doc.original_filename)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {(!data || data.items.length === 0) && (
+                <p className="text-center text-eaw-muted py-12 text-sm">
+                  No documents found. Upload a file above to get started.
+                </p>
+              )}
             </div>
 
             {/* Pagination */}

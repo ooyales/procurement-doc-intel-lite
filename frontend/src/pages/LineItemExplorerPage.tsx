@@ -25,6 +25,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import client from '@/api/client';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface LineItem {
   id: string;
@@ -80,6 +81,7 @@ function formatDate(dateStr: string | null | undefined): string {
 
 export default function LineItemExplorerPage() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Filters
   const [search, setSearch] = useState('');
@@ -224,7 +226,7 @@ export default function LineItemExplorerPage() {
       {/* Filter Bar */}
       <div className="eaw-card mb-4">
         <div className="flex flex-wrap gap-3 items-end">
-          <div className="flex-1 min-w-[180px]">
+          <div className="flex-1 min-w-[180px] w-full sm:w-auto">
             <label className="block text-xs font-medium text-eaw-muted mb-1">Search</label>
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -232,17 +234,17 @@ export default function LineItemExplorerPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="input-field pl-8"
+                className="w-full py-2 pr-3 pl-9 text-sm border border-eaw-border rounded outline-none transition-colors focus:border-eaw-primary focus:ring-1 focus:ring-eaw-primary"
                 placeholder="Product name, part #, manufacturer..."
               />
             </div>
           </div>
-          <div className="min-w-[150px]">
+          <div className="min-w-[150px] w-full sm:w-auto">
             <label className="block text-xs font-medium text-eaw-muted mb-1">Vendor</label>
             <select
               value={vendor}
               onChange={(e) => setVendor(e.target.value)}
-              className="select-field"
+              className="select-field w-full sm:w-auto"
             >
               <option value="">All Vendors</option>
               {vendorOptions.map((v) => (
@@ -250,19 +252,19 @@ export default function LineItemExplorerPage() {
               ))}
             </select>
           </div>
-          <div className="min-w-[140px]">
+          <div className="min-w-[140px] w-full sm:w-auto">
             <label className="block text-xs font-medium text-eaw-muted mb-1">Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="select-field"
+              className="select-field w-full sm:w-auto"
             >
               {CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
           </div>
-          <div className="min-w-[100px]">
+          <div className="min-w-[100px] w-[calc(50%-6px)] sm:w-auto">
             <label className="block text-xs font-medium text-eaw-muted mb-1">Min Price</label>
             <input
               type="number"
@@ -273,7 +275,7 @@ export default function LineItemExplorerPage() {
               step="0.01"
             />
           </div>
-          <div className="min-w-[100px]">
+          <div className="min-w-[100px] w-[calc(50%-6px)] sm:w-auto">
             <label className="block text-xs font-medium text-eaw-muted mb-1">Max Price</label>
             <input
               type="number"
@@ -305,7 +307,8 @@ export default function LineItemExplorerPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="eaw-table">
                 <thead>
                   <tr>
@@ -369,6 +372,41 @@ export default function LineItemExplorerPage() {
               </table>
             </div>
 
+            {/* Mobile Card List */}
+            <div className="md:hidden mobile-card-table">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="mobile-card-row clickable"
+                  onClick={() => navigate(`/documents/${item.document_id}`)}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-medium text-sm text-eaw-font truncate max-w-[200px]">
+                      {item.product_name || '--'}
+                    </span>
+                    {item.category && <span className="badge-info ml-2">{item.category}</span>}
+                  </div>
+                  {item.part_number && (
+                    <p className="text-xs text-eaw-muted mb-1">Part #: {item.part_number}</p>
+                  )}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-eaw-muted">
+                    <span>Qty: {item.quantity ?? '--'}</span>
+                    <span>Unit: {formatCurrency(item.unit_price)}</span>
+                    <span className="font-medium text-eaw-font">Total: {formatCurrency(item.extended_price)}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-eaw-muted mt-1">
+                    {item.vendor_name && <span>{item.vendor_name}</span>}
+                    <span className="ml-auto">{formatDate(item.document_date)}</span>
+                  </div>
+                </div>
+              ))}
+              {items.length === 0 && (
+                <p className="text-center text-eaw-muted py-12 text-sm">
+                  No line items found matching your criteria.
+                </p>
+              )}
+            </div>
+
             {/* Pagination */}
             {total > perPage && (
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
@@ -410,7 +448,7 @@ export default function LineItemExplorerPage() {
             <div className="eaw-card">
               <h3 className="text-xs font-semibold text-eaw-muted mb-3">Spend by Vendor</h3>
               {spendData.spend_by_vendor.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={isMobile ? 200 : 220}>
                   <BarChart data={spendData.spend_by_vendor.slice(0, 8)} layout="vertical" barSize={18}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
                     <XAxis
@@ -422,7 +460,7 @@ export default function LineItemExplorerPage() {
                       type="category"
                       dataKey="vendor"
                       tick={{ fontSize: 10, fill: '#777' }}
-                      width={90}
+                      width={isMobile ? 60 : 90}
                     />
                     <Tooltip formatter={(val: number) => formatCurrency(val)} />
                     <Bar dataKey="total" fill="#337ab7" radius={[0, 4, 4, 0]} />
@@ -437,14 +475,14 @@ export default function LineItemExplorerPage() {
             <div className="eaw-card">
               <h3 className="text-xs font-semibold text-eaw-muted mb-3">Spend by Category</h3>
               {spendData.spend_by_category.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={isMobile ? 200 : 220}>
                   <PieChart>
                     <Pie
                       data={spendData.spend_by_category}
                       cx="50%"
                       cy="50%"
-                      innerRadius={45}
-                      outerRadius={70}
+                      innerRadius={isMobile ? 35 : 45}
+                      outerRadius={isMobile ? 55 : 70}
                       dataKey="total"
                       nameKey="category"
                       paddingAngle={2}
@@ -472,7 +510,7 @@ export default function LineItemExplorerPage() {
             <div className="eaw-card">
               <h3 className="text-xs font-semibold text-eaw-muted mb-3">Spend over Time</h3>
               {spendData.spend_over_time.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={isMobile ? 200 : 220}>
                   <LineChart data={spendData.spend_over_time}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
                     <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#777' }} />

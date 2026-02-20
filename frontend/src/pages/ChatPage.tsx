@@ -136,14 +136,14 @@ export default function ChatPage() {
             <MessageSquare size={18} className="text-eaw-primary" />
             <h1 className="text-xl font-bold text-eaw-font">Procurement Chat</h1>
           </div>
-          <p className="text-sm text-eaw-muted">
+          <p className="text-sm text-eaw-muted hidden sm:block">
             Ask questions about your procurement documents
           </p>
         </div>
         {messages.length > 0 && (
           <button className="btn-secondary !text-xs" onClick={handleNewChat}>
             <RotateCcw size={14} />
-            New Chat
+            <span className="hidden sm:inline">New Chat</span>
           </button>
         )}
       </div>
@@ -151,7 +151,7 @@ export default function ChatPage() {
       {/* Chat Container */}
       <div className="flex-1 flex flex-col bg-white rounded shadow-eaw overflow-hidden">
         {/* Message List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-4">
           {messages.length === 0 ? (
             /* Empty State: Show suggestions */
             <div className="flex flex-col items-center justify-center h-full">
@@ -159,7 +159,7 @@ export default function ChatPage() {
               <h3 className="text-sm font-semibold text-eaw-font mb-2">
                 What would you like to know?
               </h3>
-              <p className="text-xs text-eaw-muted mb-6 text-center max-w-md">
+              <p className="text-xs text-eaw-muted mb-6 text-center max-w-md px-4">
                 Ask questions about your procurement documents, spending, vendors, or line items.
                 The AI will search your uploaded documents to provide answers.
               </p>
@@ -167,7 +167,7 @@ export default function ChatPage() {
               {loadingSuggestions ? (
                 <Loader2 size={16} className="animate-spin text-eaw-muted" />
               ) : (
-                <div className="flex flex-wrap justify-center gap-2 max-w-xl">
+                <div className="flex flex-wrap justify-center gap-2 max-w-xl px-2">
                   {suggestions.map((s, idx) => (
                     <button
                       key={idx}
@@ -186,7 +186,7 @@ export default function ChatPage() {
               {messages.map((msg, idx) => (
                 <div
                   key={idx}
-                  className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex gap-2 md:gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {msg.role === 'assistant' && (
                     <div className="flex-shrink-0 w-7 h-7 bg-eaw-primary rounded-full flex items-center justify-center">
@@ -195,7 +195,7 @@ export default function ChatPage() {
                   )}
 
                   <div
-                    className={`max-w-[75%] ${
+                    className={`max-w-[85%] md:max-w-[75%] ${
                       msg.role === 'user'
                         ? 'bg-blue-50 rounded-2xl rounded-tr-sm px-4 py-3'
                         : 'eaw-card !shadow-sm'
@@ -264,7 +264,7 @@ export default function ChatPage() {
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-gray-200 p-4 bg-gray-50 flex-shrink-0">
+        <div className="border-t border-gray-200 p-3 md:p-4 bg-gray-50 flex-shrink-0">
           <form onSubmit={handleSubmit} className="flex gap-2">
             <textarea
               ref={inputRef}
@@ -289,7 +289,7 @@ export default function ChatPage() {
               )}
             </button>
           </form>
-          <p className="text-xs text-eaw-muted mt-2">
+          <p className="text-xs text-eaw-muted mt-2 hidden sm:block">
             Press Enter to send, Shift+Enter for new line.
           </p>
         </div>
