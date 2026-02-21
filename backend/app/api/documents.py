@@ -31,7 +31,65 @@ def _get_extension(filename):
 @documents_bp.route('', methods=['GET'])
 @jwt_required()
 def list_documents():
-    """List documents with filters and pagination."""
+    """List documents with filters and pagination.
+    ---
+    tags:
+      - Documents
+    parameters:
+      - name: page
+        in: query
+        type: integer
+        required: false
+        default: 1
+        description: Page number
+      - name: per_page
+        in: query
+        type: integer
+        required: false
+        default: 25
+        description: Items per page (max 100)
+      - name: document_type
+        in: query
+        type: string
+        required: false
+        description: Filter by document type (vendor_quote, purchase_order, invoice, bom, etc.)
+      - name: vendor_name
+        in: query
+        type: string
+        required: false
+        description: Filter by vendor name (partial match)
+      - name: processing_status
+        in: query
+        type: string
+        required: false
+        enum: [uploaded, extracting, mapping, review, complete, failed]
+        description: Filter by processing status
+      - name: search
+        in: query
+        type: string
+        required: false
+        description: Search across filename, vendor, document number, contract number
+    responses:
+      200:
+        description: Paginated list of documents
+        schema:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/definitions/Document'
+            total:
+              type: integer
+            page:
+              type: integer
+            per_page:
+              type: integer
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+    """
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 25, type=int)
     per_page = min(per_page, 100)
@@ -79,7 +137,37 @@ def list_documents():
 @documents_bp.route('/<doc_id>', methods=['GET'])
 @jwt_required()
 def get_document(doc_id):
-    """Get single document with line items."""
+    """Get a single document with its line items.
+    ---
+    tags:
+      - Documents
+    parameters:
+      - name: doc_id
+        in: path
+        type: string
+        required: true
+        description: Document UUID
+    responses:
+      200:
+        description: Document details with line items
+        schema:
+          allOf:
+            - $ref: '#/definitions/Document'
+            - type: object
+              properties:
+                line_items:
+                  type: array
+                  items:
+                    $ref: '#/definitions/LineItem'
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+      404:
+        description: Document not found
+        schema:
+          $ref: '#/definitions/Error'
+    """
     doc = Document.query.get(doc_id)
     if not doc:
         raise NotFoundError(f'Document {doc_id} not found')
@@ -89,7 +177,32 @@ def get_document(doc_id):
 @documents_bp.route('/upload', methods=['POST'])
 @jwt_required()
 def upload_document():
-    """Upload a document file."""
+    """Upload a document file (PDF, Excel, Word, or CSV).
+    ---
+    tags:
+      - Documents
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: file
+        in: formData
+        type: file
+        required: true
+        description: Document file to upload (pdf, xlsx, xls, docx, doc, csv)
+    responses:
+      201:
+        description: Document uploaded successfully
+        schema:
+          $ref: '#/definitions/Document'
+      400:
+        description: No file provided or unsupported format
+        schema:
+          $ref: '#/definitions/Error'
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+    """
     if 'file' not in request.files:
         raise BadRequestError('No file provided')
 
@@ -146,7 +259,43 @@ def upload_document():
 @documents_bp.route('/<doc_id>/process', methods=['POST'])
 @jwt_required()
 def process_document(doc_id):
-    """Trigger extraction and AI mapping pipeline for a document."""
+    """Trigger AI extraction and field mapping pipeline for a document.
+    ---
+    tags:
+      - Documents
+    parameters:
+      - name: doc_id
+        in: path
+        type: string
+        required: true
+        description: Document UUID
+    responses:
+      200:
+        description: Document processed successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            document:
+              $ref: '#/definitions/Document'
+            line_items_created:
+              type: integer
+            chunks_created:
+              type: integer
+      400:
+        description: Processing failed or ANTHROPIC_API_KEY not configured
+        schema:
+          $ref: '#/definitions/Error'
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+      404:
+        description: Document not found
+        schema:
+          $ref: '#/definitions/Error'
+    """
     doc = Document.query.get(doc_id)
     if not doc:
         raise NotFoundError(f'Document {doc_id} not found')
@@ -277,7 +426,66 @@ def process_document(doc_id):
 @documents_bp.route('/<doc_id>', methods=['PUT'])
 @jwt_required()
 def update_document(doc_id):
-    """Update document metadata fields."""
+    """Update document metadata fields.
+    ---
+    tags:
+      - Documents
+    parameters:
+      - name: doc_id
+        in: path
+        type: string
+        required: true
+        description: Document UUID
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            document_type:
+              type: string
+            vendor_name:
+              type: string
+            document_number:
+              type: string
+            document_date:
+              type: string
+            contract_number:
+              type: string
+            task_order_number:
+              type: string
+            period_of_performance_start:
+              type: string
+            period_of_performance_end:
+              type: string
+            total_amount:
+              type: number
+            currency:
+              type: string
+            tags:
+              type: string
+            notes:
+              type: string
+            review_notes:
+              type: string
+    responses:
+      200:
+        description: Updated document
+        schema:
+          $ref: '#/definitions/Document'
+      400:
+        description: Request body is required
+        schema:
+          $ref: '#/definitions/Error'
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+      404:
+        description: Document not found
+        schema:
+          $ref: '#/definitions/Error'
+    """
     doc = Document.query.get(doc_id)
     if not doc:
         raise NotFoundError(f'Document {doc_id} not found')
@@ -304,7 +512,39 @@ def update_document(doc_id):
 @documents_bp.route('/<doc_id>/approve', methods=['PUT'])
 @jwt_required()
 def approve_document(doc_id):
-    """Mark document as reviewed/complete."""
+    """Mark document as reviewed/complete.
+    ---
+    tags:
+      - Documents
+    parameters:
+      - name: doc_id
+        in: path
+        type: string
+        required: true
+        description: Document UUID
+      - name: body
+        in: body
+        required: false
+        schema:
+          type: object
+          properties:
+            review_notes:
+              type: string
+              description: Optional review notes
+    responses:
+      200:
+        description: Document approved
+        schema:
+          $ref: '#/definitions/Document'
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+      404:
+        description: Document not found
+        schema:
+          $ref: '#/definitions/Error'
+    """
     doc = Document.query.get(doc_id)
     if not doc:
         raise NotFoundError(f'Document {doc_id} not found')
@@ -328,7 +568,35 @@ def approve_document(doc_id):
 @documents_bp.route('/<doc_id>/reprocess', methods=['PUT'])
 @jwt_required()
 def reprocess_document(doc_id):
-    """Reset document to uploaded state and clear existing extracted data."""
+    """Reset document to uploaded state and clear existing extracted data.
+    ---
+    tags:
+      - Documents
+    parameters:
+      - name: doc_id
+        in: path
+        type: string
+        required: true
+        description: Document UUID
+    responses:
+      200:
+        description: Document reset for reprocessing
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            document:
+              $ref: '#/definitions/Document'
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+      404:
+        description: Document not found
+        schema:
+          $ref: '#/definitions/Error'
+    """
     doc = Document.query.get(doc_id)
     if not doc:
         raise NotFoundError(f'Document {doc_id} not found')
@@ -359,7 +627,33 @@ def reprocess_document(doc_id):
 @documents_bp.route('/<doc_id>', methods=['DELETE'])
 @jwt_required()
 def delete_document(doc_id):
-    """Delete document and all related records."""
+    """Delete a document and all related records (line items, chunks).
+    ---
+    tags:
+      - Documents
+    parameters:
+      - name: doc_id
+        in: path
+        type: string
+        required: true
+        description: Document UUID
+    responses:
+      200:
+        description: Document deleted
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+      404:
+        description: Document not found
+        schema:
+          $ref: '#/definitions/Error'
+    """
     doc = Document.query.get(doc_id)
     if not doc:
         raise NotFoundError(f'Document {doc_id} not found')

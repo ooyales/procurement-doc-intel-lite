@@ -104,7 +104,107 @@ def _build_line_items_query(args):
 @line_items_bp.route('', methods=['GET'])
 @jwt_required()
 def list_line_items():
-    """Search and filter line items across all documents."""
+    """Search and filter line items across all documents.
+    ---
+    tags:
+      - Line Items
+    parameters:
+      - name: page
+        in: query
+        type: integer
+        required: false
+        default: 1
+        description: Page number
+      - name: per_page
+        in: query
+        type: integer
+        required: false
+        default: 25
+        description: Items per page (max 100)
+      - name: search
+        in: query
+        type: string
+        required: false
+        description: Search across product name, part number, manufacturer, description
+      - name: vendor
+        in: query
+        type: string
+        required: false
+        description: Filter by vendor name (partial match)
+      - name: category
+        in: query
+        type: string
+        required: false
+        description: Filter by category (hardware, software, service, license, etc.)
+      - name: sub_category
+        in: query
+        type: string
+        required: false
+        description: Filter by sub-category
+      - name: min_price
+        in: query
+        type: number
+        required: false
+        description: Minimum unit price
+      - name: max_price
+        in: query
+        type: number
+        required: false
+        description: Maximum unit price
+      - name: date_from
+        in: query
+        type: string
+        required: false
+        description: Document date range start (YYYY-MM-DD)
+      - name: date_to
+        in: query
+        type: string
+        required: false
+        description: Document date range end (YYYY-MM-DD)
+      - name: document_type
+        in: query
+        type: string
+        required: false
+        description: Filter by document type
+      - name: contract_number
+        in: query
+        type: string
+        required: false
+        description: Filter by contract number (partial match)
+      - name: sort_by
+        in: query
+        type: string
+        required: false
+        default: created_at
+        enum: [created_at, product_name, unit_price, extended_price, quantity, category, part_number, line_number]
+        description: Field to sort by
+      - name: sort_order
+        in: query
+        type: string
+        required: false
+        default: desc
+        enum: [asc, desc]
+    responses:
+      200:
+        description: Paginated list of line items
+        schema:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/definitions/LineItem'
+            total:
+              type: integer
+            page:
+              type: integer
+            per_page:
+              type: integer
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+    """
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 25, type=int)
     per_page = min(per_page, 100)
@@ -124,7 +224,95 @@ def list_line_items():
 @line_items_bp.route('/export', methods=['GET'])
 @jwt_required()
 def export_line_items():
-    """Export filtered line items as CSV or XLSX."""
+    """Export filtered line items as CSV or XLSX.
+    ---
+    tags:
+      - Line Items
+    parameters:
+      - name: format
+        in: query
+        type: string
+        required: false
+        default: csv
+        enum: [csv, xlsx]
+        description: Export file format
+      - name: search
+        in: query
+        type: string
+        required: false
+        description: Search across product name, part number, manufacturer, description
+      - name: vendor
+        in: query
+        type: string
+        required: false
+        description: Filter by vendor name (partial match)
+      - name: category
+        in: query
+        type: string
+        required: false
+        description: Filter by category
+      - name: sub_category
+        in: query
+        type: string
+        required: false
+        description: Filter by sub-category
+      - name: min_price
+        in: query
+        type: number
+        required: false
+        description: Minimum unit price
+      - name: max_price
+        in: query
+        type: number
+        required: false
+        description: Maximum unit price
+      - name: date_from
+        in: query
+        type: string
+        required: false
+        description: Document date range start (YYYY-MM-DD)
+      - name: date_to
+        in: query
+        type: string
+        required: false
+        description: Document date range end (YYYY-MM-DD)
+      - name: document_type
+        in: query
+        type: string
+        required: false
+        description: Filter by document type
+      - name: contract_number
+        in: query
+        type: string
+        required: false
+        description: Filter by contract number (partial match)
+      - name: sort_by
+        in: query
+        type: string
+        required: false
+        default: created_at
+        enum: [created_at, product_name, unit_price, extended_price, quantity, category, part_number, line_number]
+      - name: sort_order
+        in: query
+        type: string
+        required: false
+        default: desc
+        enum: [asc, desc]
+    produces:
+      - text/csv
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+    responses:
+      200:
+        description: Exported file download (CSV or XLSX)
+      400:
+        description: Invalid format parameter
+        schema:
+          $ref: '#/definitions/Error'
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+    """
     fmt = request.args.get('format', 'csv').lower()
     if fmt not in ('csv', 'xlsx'):
         raise BadRequestError('Format must be csv or xlsx')
@@ -217,7 +405,49 @@ def export_line_items():
 @line_items_bp.route('/spend-analysis', methods=['GET'])
 @jwt_required()
 def spend_analysis():
-    """Return aggregated spend analysis data."""
+    """Return aggregated spend analysis data (by vendor, category, and over time).
+    ---
+    tags:
+      - Line Items
+    responses:
+      200:
+        description: Spend analysis breakdown
+        schema:
+          type: object
+          properties:
+            spend_by_vendor:
+              type: array
+              items:
+                type: object
+                properties:
+                  vendor:
+                    type: string
+                  total:
+                    type: number
+            spend_by_category:
+              type: array
+              items:
+                type: object
+                properties:
+                  category:
+                    type: string
+                  total:
+                    type: number
+            spend_over_time:
+              type: array
+              items:
+                type: object
+                properties:
+                  month:
+                    type: string
+                    description: YYYY-MM format
+                  total:
+                    type: number
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+    """
     base_query = LineItem.query.join(Document, LineItem.document_id == Document.id)\
         .filter(LineItem.session_id == '__default__')
 
@@ -280,7 +510,85 @@ def spend_analysis():
 @line_items_bp.route('/<item_id>', methods=['PUT'])
 @jwt_required()
 def update_line_item(item_id):
-    """Update an individual line item. Also updates field_mappings if a field was corrected."""
+    """Update an individual line item and learn field mappings from corrections.
+    ---
+    tags:
+      - Line Items
+    parameters:
+      - name: item_id
+        in: path
+        type: string
+        required: true
+        description: Line item UUID
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            line_number:
+              type: integer
+            clin:
+              type: string
+            slin:
+              type: string
+            part_number:
+              type: string
+            manufacturer:
+              type: string
+            manufacturer_part_number:
+              type: string
+            product_name:
+              type: string
+            product_description:
+              type: string
+            category:
+              type: string
+            sub_category:
+              type: string
+            quantity:
+              type: number
+            unit_of_issue:
+              type: string
+            unit_price:
+              type: number
+            extended_price:
+              type: number
+            discount_percent:
+              type: number
+            discount_amount:
+              type: number
+            labor_category:
+              type: string
+            labor_hours:
+              type: number
+            labor_rate:
+              type: number
+            period_start:
+              type: string
+            period_end:
+              type: string
+            human_verified:
+              type: integer
+              description: 1 if human-verified, 0 otherwise
+    responses:
+      200:
+        description: Updated line item
+        schema:
+          $ref: '#/definitions/LineItem'
+      400:
+        description: Request body is required
+        schema:
+          $ref: '#/definitions/Error'
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+      404:
+        description: Line item not found
+        schema:
+          $ref: '#/definitions/Error'
+    """
     item = LineItem.query.get(item_id)
     if not item:
         raise NotFoundError(f'Line item {item_id} not found')

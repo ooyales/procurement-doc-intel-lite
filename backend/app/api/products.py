@@ -19,7 +19,54 @@ products_bp = Blueprint('products', __name__, url_prefix='/api/products')
 @products_bp.route('', methods=['GET'])
 @jwt_required()
 def list_products():
-    """List canonical products with optional search and pagination."""
+    """List canonical products with optional search and pagination.
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: page
+        in: query
+        type: integer
+        required: false
+        default: 1
+        description: Page number
+      - name: per_page
+        in: query
+        type: integer
+        required: false
+        default: 25
+        description: Items per page (max 100)
+      - name: search
+        in: query
+        type: string
+        required: false
+        description: Search across canonical name, manufacturer, category
+      - name: category
+        in: query
+        type: string
+        required: false
+        description: Filter by product category
+    responses:
+      200:
+        description: Paginated list of canonical products
+        schema:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/definitions/CanonicalProduct'
+            total:
+              type: integer
+            page:
+              type: integer
+            per_page:
+              type: integer
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+    """
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 25, type=int)
     per_page = min(per_page, 100)
@@ -57,7 +104,39 @@ def list_products():
 @products_bp.route('/<product_id>', methods=['GET'])
 @jwt_required()
 def get_product(product_id):
-    """Get a single canonical product with full details."""
+    """Get a single canonical product with full details and recent line items.
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: product_id
+        in: path
+        type: string
+        required: true
+        description: Canonical product UUID
+    responses:
+      200:
+        description: Product details with recent line items
+        schema:
+          allOf:
+            - $ref: '#/definitions/CanonicalProduct'
+            - type: object
+              properties:
+                recent_line_items:
+                  type: array
+                  items:
+                    $ref: '#/definitions/LineItem'
+                line_item_count:
+                  type: integer
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+      404:
+        description: Product not found
+        schema:
+          $ref: '#/definitions/Error'
+    """
     product = CanonicalProduct.query.get(product_id)
     if not product:
         raise NotFoundError(f'Product {product_id} not found')
@@ -84,7 +163,82 @@ def get_product(product_id):
 @products_bp.route('/<product_id>/igce', methods=['POST'])
 @jwt_required()
 def generate_igce(product_id):
-    """Generate IGCE (Independent Government Cost Estimate) for a product."""
+    """Generate IGCE (Independent Government Cost Estimate) for a product.
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: product_id
+        in: path
+        type: string
+        required: true
+        description: Canonical product UUID
+      - name: body
+        in: body
+        required: false
+        schema:
+          type: object
+          properties:
+            quantity:
+              type: number
+              default: 1
+              description: Quantity to estimate
+            escalation_rate:
+              type: number
+              default: 0.03
+              description: Price escalation rate (e.g. 0.03 for 3%)
+    responses:
+      200:
+        description: IGCE calculation result with price sources
+        schema:
+          type: object
+          properties:
+            product_name:
+              type: string
+            category:
+              type: string
+            manufacturer:
+              type: string
+            quantity:
+              type: number
+            avg_unit_price:
+              type: number
+            min_price:
+              type: number
+            max_price:
+              type: number
+            escalation_rate:
+              type: number
+            estimated_unit_price:
+              type: number
+            estimated_total:
+              type: number
+            price_sources:
+              type: array
+              items:
+                type: object
+                properties:
+                  price:
+                    type: number
+                  date:
+                    type: string
+                  vendor:
+                    type: string
+            data_points:
+              type: integer
+      400:
+        description: Invalid parameters or no pricing data available
+        schema:
+          $ref: '#/definitions/Error'
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+      404:
+        description: Product not found
+        schema:
+          $ref: '#/definitions/Error'
+    """
     product = CanonicalProduct.query.get(product_id)
     if not product:
         raise NotFoundError(f'Product {product_id} not found')
@@ -147,7 +301,32 @@ def generate_igce(product_id):
 @products_bp.route('/rebuild', methods=['POST'])
 @jwt_required()
 def rebuild_catalog():
-    """Rebuild canonical product catalog from line items."""
+    """Rebuild canonical product catalog from line items.
+    ---
+    tags:
+      - Products
+    responses:
+      200:
+        description: Catalog rebuild summary
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            created:
+              type: integer
+              description: Number of new products created
+            updated:
+              type: integer
+              description: Number of existing products updated
+            total:
+              type: integer
+              description: Total products in catalog
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+    """
     session_filter = '__default__'
 
     # Group line items by product_name and compute statistics

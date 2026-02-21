@@ -9,6 +9,50 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
+    """Authenticate and get a JWT token.
+    ---
+    tags:
+      - Auth
+    security: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - username
+            - password
+          properties:
+            username:
+              type: string
+              example: admin
+            password:
+              type: string
+              example: admin123
+    responses:
+      200:
+        description: Login successful
+        schema:
+          type: object
+          properties:
+            token:
+              type: string
+              description: JWT access token
+            access_token:
+              type: string
+              description: JWT access token (alias)
+            user:
+              $ref: '#/definitions/User'
+      400:
+        description: Missing credentials
+        schema:
+          $ref: '#/definitions/Error'
+      401:
+        description: Invalid credentials
+        schema:
+          $ref: '#/definitions/Error'
+    """
     data = request.get_json()
     if not data:
         raise BadRequestError('Request body is required')
@@ -31,6 +75,27 @@ def login():
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def me():
+    """Get current authenticated user profile.
+    ---
+    tags:
+      - Auth
+    responses:
+      200:
+        description: Current user profile from JWT claims
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+            role:
+              type: string
+            display_name:
+              type: string
+      401:
+        description: Unauthorized - missing or invalid token
+        schema:
+          $ref: '#/definitions/Error'
+    """
     identity = get_jwt_identity()
     claims = get_jwt()
     return jsonify({
@@ -43,6 +108,24 @@ def me():
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required()
 def refresh():
+    """Refresh the current JWT token.
+    ---
+    tags:
+      - Auth
+    responses:
+      200:
+        description: New access token
+        schema:
+          type: object
+          properties:
+            access_token:
+              type: string
+              description: Refreshed JWT access token
+      401:
+        description: Unauthorized - missing or invalid token
+        schema:
+          $ref: '#/definitions/Error'
+    """
     identity = get_jwt_identity()
     claims = get_jwt()
     additional_claims = {

@@ -12,7 +12,63 @@ dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/api/dashboard')
 @dashboard_bp.route('', methods=['GET'])
 @jwt_required()
 def get_dashboard():
-    """Return dashboard KPIs and summary data."""
+    """Return dashboard KPIs and summary data.
+    ---
+    tags:
+      - Dashboard
+    responses:
+      200:
+        description: Dashboard summary with KPIs, top vendors, spend breakdown, recent documents, and processing queue
+        schema:
+          type: object
+          properties:
+            total_documents:
+              type: integer
+            documents_by_status:
+              type: object
+              description: Count per processing status
+            documents_by_type:
+              type: object
+              description: Count per document type
+            total_line_items:
+              type: integer
+            total_products:
+              type: integer
+            total_spend:
+              type: number
+            top_vendors:
+              type: array
+              items:
+                type: object
+                properties:
+                  vendor_name:
+                    type: string
+                  document_count:
+                    type: integer
+                  total_spend:
+                    type: number
+            spend_by_category:
+              type: array
+              items:
+                type: object
+                properties:
+                  category:
+                    type: string
+                  total:
+                    type: number
+            recent_documents:
+              type: array
+              items:
+                $ref: '#/definitions/Document'
+            processing_queue:
+              type: array
+              items:
+                $ref: '#/definitions/Document'
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+    """
     session_filter = '__default__'
 
     # Total documents

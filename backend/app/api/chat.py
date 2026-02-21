@@ -17,7 +17,70 @@ chat_bp = Blueprint('chat', __name__, url_prefix='/api/chat')
 @chat_bp.route('', methods=['POST'])
 @jwt_required()
 def chat():
-    """Process a natural-language query about procurement data."""
+    """Process a natural-language query about procurement data using RAG.
+    ---
+    tags:
+      - Chat
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - message
+          properties:
+            message:
+              type: string
+              example: What is our total spend with Dell?
+            history:
+              type: array
+              description: Previous conversation turns
+              items:
+                type: object
+                properties:
+                  role:
+                    type: string
+                    enum: [user, assistant]
+                  content:
+                    type: string
+    responses:
+      200:
+        description: Chat response with sources
+        schema:
+          type: object
+          properties:
+            answer:
+              type: string
+            sources:
+              type: array
+              items:
+                type: object
+            query_type:
+              type: string
+              description: Type of query detected (general, spend, product, etc.)
+      400:
+        description: Message is required
+        schema:
+          $ref: '#/definitions/Error'
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+      500:
+        description: Chat service error
+        schema:
+          type: object
+          properties:
+            answer:
+              type: string
+            sources:
+              type: array
+              items:
+                type: object
+            query_type:
+              type: string
+    """
     data = request.get_json()
     if not data or not data.get('message', '').strip():
         raise BadRequestError('Message is required')
@@ -53,7 +116,29 @@ def chat():
 @chat_bp.route('/suggestions', methods=['GET'])
 @jwt_required()
 def suggestions():
-    """Return suggested queries based on what data exists in the database."""
+    """Return suggested queries based on existing data in the database.
+    ---
+    tags:
+      - Chat
+    responses:
+      200:
+        description: List of suggested query strings
+        schema:
+          type: object
+          properties:
+            suggestions:
+              type: array
+              items:
+                type: string
+              example:
+                - What is our total spend across all documents?
+                - Which vendors have the highest total spend?
+                - Show me a breakdown of spend by category.
+      401:
+        description: Unauthorized
+        schema:
+          $ref: '#/definitions/Error'
+    """
     session_filter = '__default__'
 
     # Gather distinct vendors
